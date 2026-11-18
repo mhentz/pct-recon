@@ -1,0 +1,6 @@
+# Read by shellcheck, the pre-commit hook and editor plugins.
+
+# SC1090: can't follow a non-constant `source`. The job scripts source the
+# virtualenv's activate script (~/pct-recon/.venv/bin/activate), which is
+# generated and not part of the repository.
+disable=SC1090

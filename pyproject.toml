@@ -1,0 +1,51 @@
+[tool.autoflake]
+in-place = true
+remove-all-unused-imports = true
+ignore-init-module-imports = true
+remove-unused-variables = true
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+exclude = ["__pycache__", ".mypy_cache", ".venv", "notebooks"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # missing trailing comma (conflicts with the formatter)
+    "CPY001",  # missing copyright notice at the top of a file
+    "ERA001",  # commented-out code (research scripts keep their alternatives)
+    "INP001",  # directory without an __init__.py (scripts, not packages)
+    "N802",    # function name should be lowercase
+    "N806",    # variable in function should be lowercase
+    "N816",    # mixed-case variable in global scope
+    "NPY002",  # replace legacy `np.random.rand` or `np.random.seed` with `np.random.default_rng().random`
+    "PLR0913", # too many arguments in a function definition (default: 5)
+    "PLR0917", # too many positional arguments in a function definition (default: 5)
+    "PTH103",  # `os.makedirs()` should be replaced by `Path.mkdir(parents=True)`
+    "PTH119",  # `os.path.basename()` should be replaced by `Path.name`
+    "PTH207",  # replace `glob` with `Path.glob` or `Path.rglob`
+    "T201",    # `print` found (scripts report through stdout)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# S101: assert statement; D103: public function without a docstring; PLC0415: import not
+# at the top of the module; ANN: missing type annotations; INP001: directory without an
+# __init__.py; PLR2004: literal (magic) value in a comparison
+"tests/*" = ["S101", "D103", "PLC0415", "ANN", "INP001", "PLR2004"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ty.src]
+exclude = ["notebooks", ".venv"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+# ODL registers a pytest plugin that pytest 9 rejects.
+addopts = ["-p", "no:odl_plugins"]

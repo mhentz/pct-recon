@@ -1,0 +1,35 @@
+#!/bin/bash -l
+# SETUP
+# DOSE
+# N_PROJECTIONS
+# PIXEL_W
+#$ -j y
+#$ -pe smp 2
+#$ -l mem=2G
+#$ -l h_rt=03:00:00
+#$ -cwd
+##$ -m be
+
+source ~/pct-recon/.venv/bin/activate
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export PYTHONPATH=${CODE_DIR}
+export LOGURU_LEVEL=INFO
+export BLOSC_NTHREADS=2
+# export BLOSC_NOLOCK=1
+
+N_SIGMA=3
+INPUT_DIR=${HOME}/Scratch/data/recon/${SETUP}/${DOSE}mGy/${N_PROJECTIONS}proj/processed-${N_SIGMA}sigma/matrix-${PIXEL_W}mm
+OUTPUT_DIR=${INPUT_DIR}
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time --verbose python recon/utils/recompress.py \
+    ${INPUT_DIR} \
+    ${OUTPUT_DIR} \
+    ${N_PROJECTIONS} \
+    0 \
+    360
+
+echo "End time $(date "+%Y%m%d %H:%M:%S")"

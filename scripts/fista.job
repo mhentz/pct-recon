@@ -1,0 +1,99 @@
+#!/bin/bash -l
+# SETUP
+# TARGET_DOSE
+# N_PROJECTIONS
+# PIXEL_W
+# REGULARISER
+# ALPHA
+# ETA
+# N_ITER
+# X_INIT
+#$ -j y
+#$ -pe smp 8
+#$ -l mem=1500M
+#$ -l h_rt=05:00:00
+#$ -cwd
+
+# Settings used for other runs: remove the space after '#' to enable one.
+# Wall-clock limits (hh:mm:ss):
+# $ -l h_rt=03:00:00
+# $ -l h_rt=04:00:00
+# $ -l h_rt=08:30:00
+# $ -l h_rt=10:00:00
+# $ -l h_rt=12:00:00
+# $ -l h_rt=17:00:00
+# Memory per core:
+# $ -l mem=1000M
+# $ -l mem=2G
+# Number of cores on one node (N_THREADS follows it through NSLOTS):
+# $ -pe smp 18
+# Email the submitting user when the job (b)egins and (e)nds:
+# $ -m be
+
+echo "Running on node: $(hostname -f)"
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export PYTHONPATH=${CODE_DIR}
+
+# Copy the .env file into the log, if there is one. It only supplies defaults:
+# the variables exported below take precedence (see recon/config.py).
+if [ -f .env ]; then
+  echo "Defaults from ${CODE_DIR}/.env (overridden by the exports below):"
+  cat .env
+fi
+
+export LOGURU_LEVEL=DEBUG
+# NSLOTS is set by Grid Engine to the number of cores requested with -pe smp.
+export N_THREADS=${NSLOTS}
+export BLOSC_NTHREADS=1
+export BLOSC_NOLOCK=1
+
+export TARGET_DOSE=${TARGET_DOSE}
+export N_SIGMA=3
+
+export WORKDIR=${HOME}/Scratch/data/recon/${SETUP}/${TARGET_DOSE}mGy/${N_PROJECTIONS}proj
+
+export MATRIX_DIR=${WORKDIR}/processed-${N_SIGMA}sigma/matrix-${PIXEL_W}mm
+export VECTOR_DIR=${WORKDIR}/processed-${N_SIGMA}sigma/b
+export FBP_DIR=${WORKDIR}/processed-${N_SIGMA}sigma/fbp
+export OUTPUT_DIR=${WORKDIR}/recon
+
+export ITER_START=0
+export ITER_END=${N_ITER}
+
+export SETUP=${SETUP}
+export N_PROJECTIONS=${N_PROJECTIONS}
+export PIXEL_W=${PIXEL_W}
+
+export N_SLICES=3
+export SLICE_THICKNESS=1.0
+
+export X_INIT=${X_INIT}
+
+export REGULARISER=${REGULARISER}
+
+if [ "$REGULARISER" == "dTV" ]; then
+  export REF_DIR=${HOME}/pct-recon/phantoms/xray_refs
+fi
+
+export PROX_MAX_LOOPS=2000
+
+if [[ -n $ALPHA ]]; then
+  export ALPHA
+else
+  export ALPHA=0
+fi
+
+if [[ -n $ETA ]]; then
+  export ETA
+else
+  export ETA=0
+fi
+
+source ~/pct-recon/.venv/bin/activate
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time --verbose python recon/algo/fista.py
+echo "End time $(date "+%Y%m%d %H:%M:%S")"

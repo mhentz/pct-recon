@@ -1,0 +1,68 @@
+#!/bin/bash -l
+# SETUP
+# START
+# STOP
+# N_PROJECTIONS
+# PIXEL_W
+# IMAGE_W
+# N_INPUT_CHUNKS
+# N_OUTPUT_CHUNKS
+#$ -cwd
+#$ -j y
+#$ -l mem=1000M
+#$ -pe smp 8
+#$ -l h_rt=03:00:00
+
+# Settings used for other runs: remove the space after '#' to enable one.
+# Wall-clock limits (hh:mm:ss):
+# $ -l h_rt=00:15:00
+# $ -l h_rt=00:30:00
+# $ -l h_rt=01:00:00
+# $ -l h_rt=03:00:00
+# Memory per core:
+# $ -l mem=1250M
+# $ -l mem=1750M
+# Number of cores on one node:
+# $ -pe smp 8
+# Wait for job 2566925 to finish before starting (replace with your job ID):
+# $ -hold_jid 2566925
+# Email the submitting user when the job (b)egins and (e)nds:
+# $ -m be
+
+echo "Running on node: $(hostname -f)"
+
+source ~/pct-recon/.venv/bin/activate
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export LOGURU_LEVEL=INFO
+export PYTHONPATH=${CODE_DIR}
+
+TARGET_DOSE=5
+N_SIGMA=3
+
+WORKDIR=${HOME}/Scratch/data/recon/${SETUP}/${TARGET_DOSE}mGy/${N_PROJECTIONS}proj/processed-${N_SIGMA}sigma
+INPUT_DIR=${WORKDIR}/protons
+OUTPUT_DIR=${WORKDIR}/matrix-${PIXEL_W}mm
+N_SLICES=3
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time --verbose \
+    python recon/matrix/process_blocks.py \
+        ${SETUP} \
+        ${START} \
+        ${STOP} \
+        ${N_PROJECTIONS} \
+        ${PIXEL_W} \
+        ${INPUT_DIR} \
+        ${OUTPUT_DIR} \
+        --img-shape ${N_SLICES} ${IMAGE_W} ${IMAGE_W} \
+        --slice-thickness 1.0 \
+        --verbosity-level 0 \
+        --compression-level 9 \
+        --n-threads ${NSLOTS} \
+        --n-input-chunks ${N_INPUT_CHUNKS} \
+        --n-output-chunks ${N_OUTPUT_CHUNKS}
+
+echo "End time $(date "+%Y%m%d %H:%M:%S")"

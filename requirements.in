@@ -1,0 +1,12 @@
+blosc2
+dotenv
+loguru
+matplotlib
+numpy>=2.3
+pandas>=1.5.3
+pct-tools>=1.0.0
+pyyaml
+scikit-image
+scipy
+typer>=0.20
+uproot>=5.0.2

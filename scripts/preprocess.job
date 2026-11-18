@@ -1,0 +1,53 @@
+#!/bin/bash -l
+# SETUP
+# N_PROJECTIONS
+# ACTUAL_DOSE
+# START
+# STOP
+# N_CHUNKS
+# DEGRADE_FLAG
+#$ -cwd
+#$ -j y
+#$ -pe smp 4
+#$ -l mem=4G
+#$ -l h_rt=05:00:00
+##$ -m e
+
+echo "Running on node: $(hostname -f)"
+
+source ~/pct-recon/.venv/bin/activate
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export LOGURU_LEVEL=INFO
+export PYTHONPATH=${CODE_DIR}
+
+TARGET_DOSE=5
+
+INPUT_SIM=${SETUP}-${N_PROJECTIONS}proj-${TARGET_DOSE}mGy
+# shellcheck disable=SC2034  # used by the commented-out copy below
+INPUT_DATA=${HOME}/ACFS/simulations/${INPUT_SIM}.tar.gz
+
+# cp -v ${INPUT_DATA} ${HOME}/Scratch/data/simulations
+# tar -xzf ${HOME}/Scratch/data/simulations/${INPUT_SIM}.tar.gz -C ${HOME}/Scratch/data/simulations
+
+INPUT_DIR=${HOME}/Scratch/data/simulations/${INPUT_SIM}/PhaseSpace
+OUTPUT_DIR=${HOME}/Scratch/data/recon/${SETUP}/${TARGET_DOSE}mGy/${N_PROJECTIONS}proj/processed-3sigma/protons
+mkdir -p ${OUTPUT_DIR}
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time --verbose python recon/preprocess/run.py \
+    ${SETUP} \
+    ${N_PROJECTIONS} \
+    ${ACTUAL_DOSE} \
+    ${TARGET_DOSE} \
+    ${START} \
+    ${STOP} \
+    ${N_CHUNKS} \
+    ${INPUT_DIR} \
+    ${OUTPUT_DIR} \
+    --n-threads ${NSLOTS} \
+    ${DEGRADE_FLAG}
+
+echo "End time $(date "+%Y%m%d %H:%M:%S")"

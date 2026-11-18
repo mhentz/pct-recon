@@ -1,0 +1,48 @@
+#!/bin/bash -l
+# SETUP
+# N_PROJECTIONS
+# PIXEL_W
+# RATIO
+#$ -j y
+#$ -pe smp 4
+#$ -l mem=1G
+#$ -l h_rt=02:00:00
+#$ -cwd
+
+# Settings used for other runs: remove the space after '#' to enable one.
+# Email the submitting user when the job (b)egins and (e)nds:
+# $ -m be
+# Wait for job 31104 to finish before starting (replace with your job ID). Can
+# be useful if preprocessing in a previous job is required.
+# $ -hold_jid 31104
+
+source ~/pct-recon/.venv/bin/activate
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export PYTHONPATH=${CODE_DIR}
+export LOGURU_LEVEL=DEBUG
+export BLOSC_NTHREADS=4
+export BLOSC_NOLOCK=
+
+N_SIGMA=3
+
+PYTHON_SCRIPT="
+target_dose=float(5 * ${RATIO})
+print(f'{target_dose:.0f}' if target_dose.is_integer() else f'{target_dose:.1f}')"
+
+OUTPUT_DOSE=$(python -c "${PYTHON_SCRIPT}")
+
+INPUT_DIR=${HOME}/Scratch/data/recon/${SETUP}/5mGy/${N_PROJECTIONS}proj/processed-${N_SIGMA}sigma
+OUTPUT_DIR=${HOME}/Scratch/data/recon/${SETUP}/${OUTPUT_DOSE}mGy/${N_PROJECTIONS}proj/processed-${N_SIGMA}sigma
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time --verbose python recon/utils/subsample_matrix_vector_pair.py \
+    ${INPUT_DIR} \
+    ${OUTPUT_DIR} \
+    ${N_PROJECTIONS} \
+    ${PIXEL_W} \
+    ${RATIO}
+
+echo "End time $(date "+%Y%m%d %H:%M:%S")"

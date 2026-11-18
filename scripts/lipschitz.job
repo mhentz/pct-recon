@@ -1,0 +1,42 @@
+#!/bin/bash -l
+# N_PROJECTIONS
+# IMAGE_W
+# MATRIX_DIR
+# N_ITERATIONS
+#$ -j y
+#$ -l h_rt=02:00:00
+#$ -l mem=1G
+#$ -pe smp 8
+#$ -cwd
+
+# Sometimes useful: remove the space after '#' to enable.
+# $ -m be  # send email at (b)eginning and (e)nd of job
+# $ -hold_jid 31381  # hold until job is finished
+# Memory per core:
+# $ -l mem=2G
+# Number of cores on one node:
+# $ -pe smp 16
+
+echo "Running on node: $(hostname -f)"
+
+source ~/pct-recon/.venv/bin/activate
+
+CODE_DIR=${HOME}/pct-recon
+cd ${CODE_DIR} || { echo "Error: cannot change to ${CODE_DIR}" >&2; exit 1; }
+
+export PYTHONPATH=${CODE_DIR}
+
+export LOGURU_LEVEL=INFO
+export BLOSC_NTHREADS=1
+export BLOSC_NOLOCK=1
+
+echo "Start time $(date "+%Y%m%d %H:%M:%S")"
+/usr/bin/time -v python recon/lipschitz/run.py \
+    ${MATRIX_DIR} \
+    ${N_PROJECTIONS} \
+    ${IMAGE_W} \
+    3 \
+    --n-iterations ${N_ITERATIONS} \
+    --n-threads ${NSLOTS}
+
+echo "End time $(date "+%Y%m%d %H:%M:%S")"
